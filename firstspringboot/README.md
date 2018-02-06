@@ -206,7 +206,9 @@ public EmbeddedServletContainerFactory servletContainer() {
     <optional>true</optional>
 </dependency>
 ```
-最后，声明如下：
 
-- 本案例借鉴了大牛的博客[SpringBoot非官方教程 | 第二十五篇：2小时学会springboot](http://blog.csdn.net/forezp/article/details/61472783)，案例仅供参考，有比较污的地方本人概不负责……
-- 代码地址：https://github.com/wsqat/spring-cloud/tree/master/firstspringboot 望star。
+## 附录
+
+- [SpringBoot非官方教程 | 第二十五篇：2小时学会springboot](http://blog.csdn.net/forezp/article/details/61472783)，案例仅供参考，有比较污的地方本人概不负责……
+
+- [示例代码-github](https://github.com/wsqat/spring-cloud/tree/master/firstspringboot)，望star。
