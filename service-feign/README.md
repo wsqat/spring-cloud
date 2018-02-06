@@ -92,4 +92,4 @@ public class HiController {
 
 [史上最简单的SpringCloud教程 | 第三篇: 服务消费者（Feign）](http://blog.csdn.net/forezp/article/details/69808079)
 
-[示例代码-github]()
+[示例代码-github](https://github.com/wsqat/spring-cloud/tree/master/service-feign)

@@ -132,4 +132,4 @@ hi forezp,i am from port:8763
 
 [史上最简单的SpringCloud教程 | 第二篇: 服务消费者（rest+ribbon）](http://blog.csdn.net/forezp/article/details/69788938)
 
-[示例代码-github]()
+[示例代码-github](https://github.com/wsqat/spring-cloud/tree/master/service-ribbon)

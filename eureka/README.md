@@ -82,6 +82,4 @@ spring.application.name=eurekaclient
 
 [史上最简单的 SpringCloud 教程 | 第一篇： 服务的注册与发现（Eureka）](http://blog.csdn.net/forezp/article/details/69696915)
 
-[示例代码-github]()
-
-
+[示例代码-github](https://github.com/wsqat/spring-cloud/tree/master/eureka)
