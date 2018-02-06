@@ -77,3 +77,11 @@ spring.application.name=eurekaclient
 这时打开 http://localhost:8762/hi?name=forezp ，你会在浏览器上看到 :
 
 `hi forezp,i am from port:8762`
+
+## 附录
+
+[史上最简单的 SpringCloud 教程 | 第一篇： 服务的注册与发现（Eureka）](http://blog.csdn.net/forezp/article/details/69696915)
+
+[示例代码-github]()
+
+
