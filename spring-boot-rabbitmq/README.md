@@ -100,7 +100,9 @@ Fanout Exchange 消息广播的模式，不管路由键或者是路由模式，�
 > brew install rabbitmq
 
 ## 2、Mac安装RabbitMQ
+
 看到如下的代码表示RabbitMQ安装成功
+
 ![install.png](http://upload-images.jianshu.io/upload_images/688387-d65d6c6da974fb48.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 >注意： rabbitmq的安装目录： /usr/local/Cellar/rabbitmq/3.7.3
@@ -118,7 +120,8 @@ sbin/rabbitmq-server #启动rabbitmq
 ```
 cd /usr/local/Cellar/rabbitmq/3.7.3/sbin
 rabbitmq-plugins enable rabbitmq_management
- ```
+```
+ 
 rabbitmq_management（执行一次以后不用再次执行）
 
 ## 5.登陆管理界面
@@ -279,6 +282,7 @@ Sender1 : spirng boot sagewang queue ****** 10
 ```
 
 > 结果如下
+
 ```
 Receiver 1: spirng boot sagewang queue ****** 23
 Receiver 1: spirng boot sagewang queue ****** 25
@@ -325,6 +329,7 @@ public void process(User user) {
 ```
 
 > 结果如下
+
 ```
 Sender object: User{name='neo', pass='123456'}
 Receiver object : User{name='neo', pass='123456'}
@@ -385,6 +390,7 @@ public void send2() {
 }
 ```
 > 结果如下
+
 ```
 Topic Receiver1  : hi, i am message 1
 Topic Receiver2  : hi, i am message 1
@@ -451,6 +457,7 @@ public void send() {
 ```
 
 > 结果如下
+
 ```
 Topic Receiver1  : hi, i am message 1
 Topic Receiver2  : hi, i am message 1
@@ -458,12 +465,15 @@ Topic Receiver2  : hi, i am message all
 ```
 
 > 结果如下
+
 ```
+
 fanout Receiver A  : hi, fanout msg 
 fanout Receiver B: hi, fanout msg 
 fanout Receiver C: hi, fanout msg 
+
 ```
 
 结果说明，绑定到fanout交换机上面的队列都收到了消息
 
-[示例代码-github]()
+[示例代码-github](https://github.com/wsqat/spring-cloud/tree/master/spring-boot-rabbitmq)
