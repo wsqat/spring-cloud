@@ -18,7 +18,7 @@ public class ObjectTest {
 	@Test
 	public void sendOject() throws Exception {
 		User user=new User();
-		user.setName("neo");
+		user.setName("sagewang");
 		user.setPass("123456");
 		sender.send(user);
 	}

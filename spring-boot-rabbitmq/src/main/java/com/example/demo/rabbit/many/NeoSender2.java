@@ -11,7 +11,7 @@ public class NeoSender2 {
 	private AmqpTemplate rabbitTemplate;
 
 	public void send(int i) {
-		String context = "spirng boot neo queue"+" ****** "+i;
+		String context = "spirng boot sagewang queue"+" ****** "+i;
 		System.out.println("Sender2 : " + context);
 		this.rabbitTemplate.convertAndSend("neo", context);
 	}

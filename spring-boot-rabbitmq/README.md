@@ -12,8 +12,34 @@ AMQP，即Advanced Message Queuing Protocol，高级消息队列协议，是应�
 
 RabbitMQ是一个开源的AMQP实现，服务器端用Erlang语言编写，支持多种客户端，如：Python、Ruby、.NET、Java、JMS、C、PHP、ActionScript、XMPP、STOMP等，支持AJAX。用于在分布式系统中存储转发消息，在易用性、扩展性、高可用性等方面表现不俗。
 
+## 2、RabbitMQ VS Kafka MQ
+Kafka MQ是一个高吞吐量分布式消息系统。是由linkedin开源的消息中间件。 Kafka就跟这个名字一样，设计非常独特。
+> 在应用场景方面
 
-## 2、相关概念
+- RabbitMQ,遵循AMQP协议，由内在高并发的erlanng语言开发，用在实时的对可靠性要求比较高的消息传递上。(AMQP，即Advanced Message Queuing Protocol,)
+- kafka是Linkedin于2010年12月份开源的消息发布订阅系统,它主要用于处理活跃的流式数据,大数据量的数据处理上。
+
+> 在架构模型方面
+
+- RabbitMQ遵循AMQP协议，RabbitMQ的broker由Exchange,Binding,queue组成，其中exchange和binding组成了消息的路由键；客户端Producer通过连接channel和server进行通信，Consumer从queue获取消息进行消费（长连接，queue有消息会推送到consumer端，consumer循环从输入流读取数据）。rabbitMQ以broker为中心；有消息的确认机制。
+- kafka遵从一般的MQ结构，producer，broker，consumer，以consumer为中心，消息的消费信息保存的客户端consumer上，consumer根据消费的点，从broker上批量pull数据；无消息确认机制。
+
+> 在吞吐量
+
+- kafka具有高的吞吐量，内部采用消息的批量处理，zero-copy机制，数据的存储和获取是本地磁盘顺序批量操作，具有O(1)的复杂度，消息处理的效率很高。
+- rabbitMQ在吞吐量方面稍逊于kafka，他们的出发点不一样，rabbitMQ支持对消息的可靠的传递，支持事务，不支持批量的操作；基于存储的可靠性的要求存储可以采用内存或者硬盘。
+
+> 在可用性方面
+
+- rabbitMQ支持miror的queue，主queue失效，miror queue接管。
+- kafka的broker支持主备模式。
+ 
+> 在集群负载均衡方面
+
+- kafka采用zookeeper(ZooKeeper是一个分布式的，开放源码的分布式应用程序协调服务)对集群中的broker、consumer进行管理，可以注册topic到zookeeper上；通过zookeeper的协调机制，producer保存对应topic的broker信息，可以随机或者轮询发送到broker上；并且producer可以基于语义指定分片，消息发送到broker的某分片上。
+- rabbitMQ的负载均衡需要单独的loadbalancer进行支持。
+
+## 3、相关概念
 通常我们谈到队列服务, 会有三个概念： 发消息者、队列、收消息者，RabbitMQ 在这个基本概念之上, 多做了一层抽象, 在发消息者和 队列之间, 加入了交换器 (Exchange). 这样发消息者和队列就没有直接联系, 转而变成发消息者把消息给交换器, 交换器根据调度策略再把消息再给队列。
 
 ![RabbitMQ](http://www.ityouknow.com/assets/images/2016/RabbitMQ01.png)
@@ -107,3 +133,337 @@ rabbitmq_management（执行一次以后不用再次执行）
 
 # 三、springboot集成RabbitMQ
 springboot集成RabbitMQ非常简单，如果只是简单的使用配置非常少，springboot提供了spring-boot-starter-amqp项目对消息各种支持。
+
+
+## （一）简单实用
+
+### 1、配置pom包，主要是添加spring-boot-starter-amqp的支持
+
+```
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-amqp</artifactId>
+</dependency>
+```
+
+### 2、配置文件
+配置rabbitmq的安装地址、端口以及账户信息
+
+```
+spring.application.name=spirng-boot-rabbitmq
+
+spring.rabbitmq.host=localhost
+spring.rabbitmq.port=5672
+spring.rabbitmq.username=guest
+spring.rabbitmq.password=guest
+```
+
+### 3、队列配置
+```
+@Configuration
+public class RabbitConfig {
+
+    @Bean
+    public Queue Queue() {
+        return new Queue("hello");
+    }
+
+}
+```
+
+### 4、发送者
+rabbitTemplate是springboot 提供的默认实现
+
+```
+public class HelloSender {
+
+    @Autowired
+    private AmqpTemplate rabbitTemplate;
+
+    public void send() {
+        String context = "hello " + new Date();
+        System.out.println("Sender : " + context);
+        this.rabbitTemplate.convertAndSend("hello", context);
+    }
+
+}
+```
+
+### 5、接受者
+```
+@Component
+@RabbitListener(queues = "hello")
+public class HelloReceiver {
+
+    @RabbitHandler
+    public void process(String hello) {
+        System.out.println("Receiver  : " + hello);
+    }
+
+}
+```
+
+### 6、测试
+> 注意，发送者和接收者的queue name必须一致，不然不能接收
+
+
+```
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class RabbitMqHelloTest {
+
+    @Autowired
+    private HelloSender helloSender;
+
+    @Test
+    public void hello() throws Exception {
+        helloSender.send();
+    }
+
+}
+```
+> 结果如下
+
+```
+2018-03-06 12:27:42.417  INFO 72847 --- [           main] com.example.demo.DemoApplication         : Started DemoApplication in 7.472 seconds (JVM running for 10.549)
+Receiver  : hello Tue Mar 06 12:28:02 CST 2018
+Receiver  : hello Tue Mar 06 12:29:29 CST 2018
+
+```
+
+## （二）多对多使用
+一个发送者，N个接收者或者N个发送者和N个接收者会出现什么情况呢？
+
+一对多发送     
+对上面的代码进行了小改造,接收端注册了两个Receiver,Receiver1和Receiver2，发送端加入参数计数，接收端打印接收到的参数，下面是测试代码，发送一百条消息，来观察两个接收端的执行效果
+```
+@Test
+public void oneToMany() throws Exception {
+    for (int i=0;i<100;i++){
+        neoSender.send(i);
+    }
+}
+```
+
+> 结果如下
+
+```
+Sender1 : spirng boot sagewang queue ****** 0
+Sender1 : spirng boot sagewang queue ****** 1
+Sender1 : spirng boot sagewang queue ****** 2
+Sender1 : spirng boot sagewang queue ****** 3
+Sender1 : spirng boot sagewang queue ****** 4
+Sender1 : spirng boot sagewang queue ****** 5
+Sender1 : spirng boot sagewang queue ****** 6
+Sender1 : spirng boot sagewang queue ****** 7
+Sender1 : spirng boot sagewang queue ****** 8
+Sender1 : spirng boot sagewang queue ****** 9
+Sender1 : spirng boot sagewang queue ****** 10
+```
+
+根据返回结果得到以下结论
+
+> 一个发送者，N个接受者,经过测试会均匀的将消息发送到N个接收者中
+
+多对多发送
+
+复制了一份发送者，加入标记，在一百个循环中相互交替发送
+```
+@Test
+    public void manyToMany() throws Exception {
+        for (int i=0;i<100;i++){
+            neoSender.send(i);
+            neoSender2.send(i);
+        }
+}
+```
+
+> 结果如下
+```
+Receiver 1: spirng boot sagewang queue ****** 23
+Receiver 1: spirng boot sagewang queue ****** 25
+Receiver 1: spirng boot sagewang queue ****** 27
+Receiver 1: spirng boot sagewang queue ****** 29
+Receiver 1: spirng boot sagewang queue ****** 31
+Receiver 1: spirng boot sagewang queue ****** 33
+Receiver 2: spirng boot sagewang queue ****** 23
+Receiver 1: spirng boot sagewang queue ****** 35
+Receiver 2: spirng boot sagewang queue ****** 25
+Receiver 1: spirng boot sagewang queue ****** 37
+Receiver 2: spirng boot sagewang queue ****** 27
+Receiver 1: spirng boot sagewang queue ****** 39
+Receiver 1: spirng boot sagewang queue ****** 41
+Receiver 1: spirng boot sagewang queue ****** 43
+Receiver 2: spirng boot sagewang queue ****** 29
+Receiver 1: spirng boot sagewang queue ****** 45
+Receiver 1: spirng boot sagewang queue ****** 47
+Receiver 1: spirng boot sagewang queue ****** 49
+```
+
+> 结论：和一对多一样，接收端仍然会均匀接收到消息
+
+
+## （三）高级使用
+对象的支持
+
+springboot以及完美的支持对象的发送和接收，不需要格外的配置。
+
+```
+//发送者
+public void send(User user) {
+    System.out.println("Sender object: " + user.toString());
+    this.rabbitTemplate.convertAndSend("object", user);
+}
+
+...
+
+//接收者
+@RabbitHandler
+public void process(User user) {
+    System.out.println("Receiver object : " + user);
+}
+```
+
+> 结果如下
+```
+Sender object: User{name='neo', pass='123456'}
+Receiver object : User{name='neo', pass='123456'}
+```
+
+## （四）Topic Exchange
+
+topic 是RabbitMQ中最灵活的一种方式，可以根据routing_key自由的绑定不同的队列
+
+首先对topic规则配置，这里使用两个队列来测试
+```
+@Configuration
+public class TopicRabbitConfig {
+
+    final static String message = "topic.message";
+    final static String messages = "topic.messages";
+
+    @Bean
+    public Queue queueMessage() {
+        return new Queue(TopicRabbitConfig.message);
+    }
+
+    @Bean
+    public Queue queueMessages() {
+        return new Queue(TopicRabbitConfig.messages);
+    }
+
+    @Bean
+    TopicExchange exchange() {
+        return new TopicExchange("exchange");
+    }
+
+    @Bean
+    Binding bindingExchangeMessage(Queue queueMessage, TopicExchange exchange) {
+        return BindingBuilder.bind(queueMessage).to(exchange).with("topic.message");
+    }
+
+    @Bean
+    Binding bindingExchangeMessages(Queue queueMessages, TopicExchange exchange) {
+        return BindingBuilder.bind(queueMessages).to(exchange).with("topic.#");
+    }
+}
+```
+
+使用queueMessages同时匹配两个队列，queueMessage只匹配”topic.message”队列
+
+```
+public void send1() {
+    String context = "hi, i am message 1";
+    System.out.println("Sender : " + context);
+    this.rabbitTemplate.convertAndSend("exchange", "topic.message", context);
+}
+
+public void send2() {
+    String context = "hi, i am messages 2";
+    System.out.println("Sender : " + context);
+    this.rabbitTemplate.convertAndSend("exchange", "topic.messages", context);
+}
+```
+> 结果如下
+```
+Topic Receiver1  : hi, i am message 1
+Topic Receiver2  : hi, i am message 1
+Topic Receiver2  : hi, i am message all
+```
+
+发送send1会匹配到topic.#和topic.message 两个Receiver都可以收到消息，发送send2只有topic.#可以匹配所有只有Receiver2监听到消息
+
+## （五）Fanout Exchange
+
+Fanout 就是我们熟悉的广播模式或者订阅模式，给Fanout交换机发送消息，绑定了这个交换机的所有队列都收到这个消息。
+
+Fanout 相关配置
+```
+@Configuration
+public class FanoutRabbitConfig {
+
+    @Bean
+    public Queue AMessage() {
+        return new Queue("fanout.A");
+    }
+
+    @Bean
+    public Queue BMessage() {
+        return new Queue("fanout.B");
+    }
+
+    @Bean
+    public Queue CMessage() {
+        return new Queue("fanout.C");
+    }
+
+    @Bean
+    FanoutExchange fanoutExchange() {
+        return new FanoutExchange("fanoutExchange");
+    }
+
+    @Bean
+    Binding bindingExchangeA(Queue AMessage,FanoutExchange fanoutExchange) {
+        return BindingBuilder.bind(AMessage).to(fanoutExchange);
+    }
+
+    @Bean
+    Binding bindingExchangeB(Queue BMessage, FanoutExchange fanoutExchange) {
+        return BindingBuilder.bind(BMessage).to(fanoutExchange);
+    }
+
+    @Bean
+    Binding bindingExchangeC(Queue CMessage, FanoutExchange fanoutExchange) {
+        return BindingBuilder.bind(CMessage).to(fanoutExchange);
+    }
+
+}
+```
+
+这里使用了A、B、C三个队列绑定到Fanout交换机上面，发送端的routing_key写任何字符都会被忽略：
+
+```
+public void send() {
+        String context = "hi, fanout msg ";
+        System.out.println("Sender : " + context);
+        this.rabbitTemplate.convertAndSend("fanoutExchange","", context);
+}
+```
+
+> 结果如下
+```
+Topic Receiver1  : hi, i am message 1
+Topic Receiver2  : hi, i am message 1
+Topic Receiver2  : hi, i am message all
+```
+
+> 结果如下
+```
+fanout Receiver A  : hi, fanout msg 
+fanout Receiver B: hi, fanout msg 
+fanout Receiver C: hi, fanout msg 
+```
+
+结果说明，绑定到fanout交换机上面的队列都收到了消息
+
+[示例代码-github]()
