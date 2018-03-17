@@ -472,7 +472,7 @@ public String login(HttpServletRequest request, Map<String, Object> map) throws 
 
 shiro很强大，这仅仅是完成了登录认证和权限管理这两个功能，更多内容以后有时间再做探讨。
 
-[示例代码-github](https://github.com/wsqat/spring-cloud)
+[示例代码-github](https://github.com/wsqat/spring-cloud/tree/master/springboot-shiro)
 
 参考：
 
